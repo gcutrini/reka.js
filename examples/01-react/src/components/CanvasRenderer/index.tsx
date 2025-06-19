@@ -24,12 +24,15 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
     }
 
     console.log('CanvasRenderer mounted. Drawing view:', view);
+    canvas.width = 400;
+    canvas.height = 300;
 
     const disposer = autorun(() => {
       console.log('View changed, redrawing');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const draw = (v: t.View) => {
+        console.log('Drawing node', v.type, (v as any).tag);
         if (v.type === 'TagView') {
           if (v.tag === 'rect') {
             const { x = 0, y = 0, width = 0, height = 0, color = 'black' } =

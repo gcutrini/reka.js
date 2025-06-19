@@ -54,8 +54,10 @@ const frame = reka.createFrame({
   id: 'Canvas Demo',
   component: { name: 'App' },
 });
-
-// frame.compute() will be triggered once the page mounts
+console.log('Frame created:', frame.id);
+// Compute immediately so the initial view is ready for the first render
+frame.compute(true);
+console.log('Initial frame view:', frame.view);
 
 const CanvasView = observer(() => {
   console.log('CanvasView render. frame.view:', frame.view);
@@ -64,9 +66,7 @@ const CanvasView = observer(() => {
 
 export default function CanvasPage() {
   React.useEffect(() => {
-    console.log('Computing frame...');
-    frame.compute(true);
-    console.log('Frame computed:', frame.view);
+    console.log('Canvas page mounted. Current frame view:', frame.view);
   }, []);
 
   return (
