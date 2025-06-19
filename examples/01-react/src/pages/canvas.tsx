@@ -48,15 +48,20 @@ reka.load(
   })
 );
 
+console.log('Reka program loaded.');
+
 const frame = reka.createFrame({
   id: 'Canvas Demo',
   component: { name: 'App' },
 });
 
 // Ensure the view is computed before first render
+console.log('Computing frame...');
 frame.compute(true);
+console.log('Frame computed:', frame.view);
 
 const CanvasView = observer(() => {
+  console.log('CanvasView render. frame.view:', frame.view);
   return frame.view ? <CanvasRenderer view={frame.view} /> : null;
 });
 
