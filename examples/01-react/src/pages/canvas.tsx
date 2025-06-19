@@ -5,10 +5,14 @@ import * as React from 'react';
 
 import dynamic from 'next/dynamic';
 
-// react-konva relies on the browser DOM APIs. Disable SSR for the renderer
-const CanvasRenderer = dynamic(() => import('@/components/CanvasRenderer'), {
-  ssr: false,
-});
+// react-konva relies on the browser DOM APIs. Disable SSR for the renderer.
+// The component is a named export, so we must resolve it from the module.
+const CanvasRenderer = dynamic(
+  () => import('@/components/CanvasRenderer').then((m) => m.CanvasRenderer),
+  {
+    ssr: false,
+  }
+);
 import { Editor } from '@/components/Editor';
 
 const reka = Reka.create();
