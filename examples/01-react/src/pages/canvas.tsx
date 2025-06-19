@@ -4,6 +4,7 @@ import * as t from '@rekajs/types';
 import * as React from 'react';
 
 import { CanvasRenderer } from '@/components/CanvasRenderer';
+import { Editor } from '@/components/Editor';
 
 const reka = Reka.create();
 
@@ -71,7 +72,14 @@ export default function CanvasPage() {
 
   return (
     <RekaProvider reka={reka}>
-      <CanvasView />
+      <div className="flex h-screen">
+        <div className="w-3/6 h-full border-r-2">
+          <Editor />
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <CanvasView />
+        </div>
+      </div>
     </RekaProvider>
   );
 }
