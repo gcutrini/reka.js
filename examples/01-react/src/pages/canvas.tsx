@@ -1,5 +1,5 @@
 import { Reka } from '@rekajs/core';
-import { RekaProvider } from '@rekajs/react';
+import { RekaProvider, observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
 import * as React from 'react';
 
@@ -53,10 +53,14 @@ const frame = reka.createFrame({
   component: { name: 'App' },
 });
 
+const CanvasView = observer(() => {
+  return frame.view ? <CanvasRenderer view={frame.view} /> : null;
+});
+
 export default function CanvasPage() {
   return (
     <RekaProvider reka={reka}>
-      {frame.view && <CanvasRenderer view={frame.view} />}
+      <CanvasView />
     </RekaProvider>
   );
 }
