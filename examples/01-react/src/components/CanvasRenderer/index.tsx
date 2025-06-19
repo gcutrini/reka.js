@@ -52,6 +52,10 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
           (v as any).children.forEach(draw);
         } else if (
           v.type === 'RekaComponentView' ||
+          v.type === 'ExternalComponentView'
+        ) {
+          (v as any).render.forEach(draw);
+        } else if (
           v.type === 'FrameView' ||
           v.type === 'SlotView' ||
           v.type === 'FragmentView'
