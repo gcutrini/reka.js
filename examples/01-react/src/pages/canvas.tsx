@@ -53,6 +53,9 @@ const frame = reka.createFrame({
   component: { name: 'App' },
 });
 
+// Ensure the view is computed before first render
+frame.compute(true);
+
 const CanvasView = observer(() => {
   return frame.view ? <CanvasRenderer view={frame.view} /> : null;
 });
