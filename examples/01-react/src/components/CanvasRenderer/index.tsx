@@ -8,7 +8,13 @@ export type CanvasRendererProps = {
 };
 
 export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
+  React.useEffect(() => {
+    console.log('CanvasRenderer mounted. root view:', view);
+    return () => console.log('CanvasRenderer unmounted');
+  }, [view]);
+
   const renderView = (v: t.View, index: number): React.ReactNode => {
+    console.log('Rendering node', v);
     if (v.type === 'TagView') {
       if (v.tag === 'rect') {
         const { x = 0, y = 0, width = 0, height = 0, color = 'black' } =
