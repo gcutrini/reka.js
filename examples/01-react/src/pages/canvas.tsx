@@ -55,10 +55,7 @@ const frame = reka.createFrame({
   component: { name: 'App' },
 });
 
-// Ensure the view is computed before first render
-console.log('Computing frame...');
-frame.compute(true);
-console.log('Frame computed:', frame.view);
+// frame.compute() will be triggered once the page mounts
 
 const CanvasView = observer(() => {
   console.log('CanvasView render. frame.view:', frame.view);
@@ -66,6 +63,12 @@ const CanvasView = observer(() => {
 });
 
 export default function CanvasPage() {
+  React.useEffect(() => {
+    console.log('Computing frame...');
+    frame.compute(true);
+    console.log('Frame computed:', frame.view);
+  }, []);
+
   return (
     <RekaProvider reka={reka}>
       <CanvasView />
