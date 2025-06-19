@@ -1,77 +1,52 @@
 import { observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
 import * as React from 'react';
-import { autorun } from 'mobx';
+import { Stage, Layer, Rect, Circle, Group } from 'react-konva';
 
 export type CanvasRendererProps = {
   view: t.View;
 };
 
 export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
-      console.warn('Canvas element not found');
-      return;
+  const renderView = (v: t.View, index: number): React.ReactNode => {
+    if (v.type === 'TagView') {
+      if (v.tag === 'rect') {
+        const { x = 0, y = 0, width = 0, height = 0, color = 'black' } =
+          (v as any).props;
+        return (
+          <Rect
+            key={index}
+            x={x}
+            y={y}
+            width={width}
+            height={height}
+            fill={color}
+          />
+        );
+      }
+      if (v.tag === 'circle') {
+        const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
+        return <Circle key={index} x={x} y={y} radius={r} fill={color} />;
+      }
+      return (
+        <Group key={index}>{(v as any).children.map(renderView)}</Group>
+      );
     }
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      console.warn('Could not get 2d context');
-      return;
+    if (v.type === 'RekaComponentView' || v.type === 'ExternalComponentView') {
+      return <React.Fragment key={index}>{(v as any).render.map(renderView)}</React.Fragment>;
     }
 
-    console.log('CanvasRenderer mounted. Drawing view:', view);
-    canvas.width = 400;
-    canvas.height = 300;
+    if (v.type === 'FrameView' || v.type === 'SlotView' || v.type === 'FragmentView') {
+      return <React.Fragment key={index}>{(v as any).children.map(renderView)}</React.Fragment>;
+    }
 
-    const disposer = autorun(() => {
-      console.log('View changed, redrawing');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return null;
+  };
 
-      const draw = (v: t.View) => {
-        console.log('Drawing node', v.type, (v as any).tag);
-        if (v.type === 'TagView') {
-          if (v.tag === 'rect') {
-            const { x = 0, y = 0, width = 0, height = 0, color = 'black' } =
-              (v as any).props;
-            console.log('Drawing rect', { x, y, width, height, color });
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, width, height);
-          } else if (v.tag === 'circle') {
-            const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
-            console.log('Drawing circle', { x, y, r, color });
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(x, y, r, 0, Math.PI * 2);
-            ctx.fill();
-          }
-
-          (v as any).children.forEach(draw);
-        } else if (
-          v.type === 'RekaComponentView' ||
-          v.type === 'ExternalComponentView'
-        ) {
-          (v as any).render.forEach(draw);
-        } else if (
-          v.type === 'FrameView' ||
-          v.type === 'SlotView' ||
-          v.type === 'FragmentView'
-        ) {
-          (v as any).children.forEach(draw);
-        }
-      };
-
-      draw(view);
-    });
-
-    return () => {
-      console.log('CanvasRenderer cleanup');
-      disposer();
-    };
-  }, [view]);
-
-  return <canvas ref={canvasRef} width={400} height={300} />;
+  return (
+    <Stage width={400} height={300}>
+      <Layer>{renderView(view, 0)}</Layer>
+    </Stage>
+  );
 });
