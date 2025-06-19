@@ -30,15 +30,15 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const draw = (v: t.View) => {
-        if (v instanceof t.TagView) {
+        if (v.type === 'TagView') {
           if (v.tag === 'rect') {
             const { x = 0, y = 0, width = 0, height = 0, color = 'black' } =
-              v.props as any;
+              (v as any).props;
             console.log('Drawing rect', { x, y, width, height, color });
             ctx.fillStyle = color;
             ctx.fillRect(x, y, width, height);
           } else if (v.tag === 'circle') {
-            const { x = 0, y = 0, r = 0, color = 'black' } = v.props as any;
+            const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
             console.log('Drawing circle', { x, y, r, color });
             ctx.fillStyle = color;
             ctx.beginPath();
@@ -46,14 +46,14 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
             ctx.fill();
           }
 
-          v.children.forEach(draw);
+          (v as any).children.forEach(draw);
         } else if (
-          v instanceof t.RekaComponentView ||
-          v instanceof t.FrameView ||
-          v instanceof t.SlotView ||
-          v instanceof t.FragmentView
+          v.type === 'RekaComponentView' ||
+          v.type === 'FrameView' ||
+          v.type === 'SlotView' ||
+          v.type === 'FragmentView'
         ) {
-          v.children.forEach(draw);
+          (v as any).children.forEach(draw);
         }
       };
 
