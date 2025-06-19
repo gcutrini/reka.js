@@ -1,9 +1,8 @@
 import { Reka } from '@rekajs/core';
 import { RekaProvider, observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
-import * as React from 'react';
-
 import dynamic from 'next/dynamic';
+import * as React from 'react';
 
 // react-konva relies on the browser DOM APIs. Disable SSR for the renderer.
 // The component is a named export, so we must resolve it from the module.

@@ -17,8 +17,13 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
     console.log('Rendering node', v);
     if (v.type === 'TagView') {
       if (v.tag === 'rect') {
-        const { x = 0, y = 0, width = 0, height = 0, color = 'black' } =
-          (v as any).props;
+        const {
+          x = 0,
+          y = 0,
+          width = 0,
+          height = 0,
+          color = 'black',
+        } = (v as any).props;
         return (
           <Rect
             key={index}
@@ -34,17 +39,27 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
         const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
         return <Circle key={index} x={x} y={y} radius={r} fill={color} />;
       }
-      return (
-        <Group key={index}>{(v as any).children.map(renderView)}</Group>
-      );
+      return <Group key={index}>{(v as any).children.map(renderView)}</Group>;
     }
 
     if (v.type === 'RekaComponentView' || v.type === 'ExternalComponentView') {
-      return <React.Fragment key={index}>{(v as any).render.map(renderView)}</React.Fragment>;
+      return (
+        <React.Fragment key={index}>
+          {(v as any).render.map(renderView)}
+        </React.Fragment>
+      );
     }
 
-    if (v.type === 'FrameView' || v.type === 'SlotView' || v.type === 'FragmentView') {
-      return <React.Fragment key={index}>{(v as any).children.map(renderView)}</React.Fragment>;
+    if (
+      v.type === 'FrameView' ||
+      v.type === 'SlotView' ||
+      v.type === 'FragmentView'
+    ) {
+      return (
+        <React.Fragment key={index}>
+          {(v as any).children.map(renderView)}
+        </React.Fragment>
+      );
     }
 
     return null;
