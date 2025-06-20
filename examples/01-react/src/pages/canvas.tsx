@@ -1,15 +1,11 @@
 import { Reka } from '@rekajs/core';
 import { RekaProvider, observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
-import dynamic from 'next/dynamic';
 import * as React from 'react';
 
 import { Editor } from '@/components/Editor';
 
-const CanvasRenderer = dynamic(
-  () => import('@/components/CanvasRenderer').then((m) => m.CanvasRenderer),
-  { ssr: false }
-);
+import { CanvasRenderer } from '@/components/CanvasRenderer';
 
 const reka = Reka.create();
 
