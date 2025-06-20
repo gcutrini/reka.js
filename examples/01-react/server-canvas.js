@@ -6,6 +6,9 @@ module.exports = {
   }),
   // Minimal stub for Konva's Image constructor
   Image: function Image() {
-    this.addEventListener = () => {};
+    // noop so Konva can call addEventListener without throwing
+    this.addEventListener = function () {
+      return undefined;
+    };
   },
 };
