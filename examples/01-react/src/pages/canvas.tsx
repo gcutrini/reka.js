@@ -5,6 +5,7 @@ import * as React from 'react';
 
 import { Editor } from '@/components/Editor';
 
+// Use a static import so the renderer is bundled with the page.
 import { CanvasRenderer } from '@/components/CanvasRenderer';
 
 const reka = Reka.create();
