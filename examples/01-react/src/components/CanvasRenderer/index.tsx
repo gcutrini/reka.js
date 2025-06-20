@@ -8,6 +8,10 @@ export type CanvasRendererProps = {
 };
 
 export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
+  if (typeof window === 'undefined') {
+    // Avoid rendering on the server to prevent useLayoutEffect warnings
+    return null;
+  }
   React.useEffect(() => {
     console.log('CanvasRenderer mounted. root view:', view);
     return () => console.log('CanvasRenderer unmounted');
