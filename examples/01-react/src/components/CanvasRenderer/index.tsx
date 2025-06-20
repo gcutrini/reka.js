@@ -1,9 +1,6 @@
 import { observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
 import * as React from 'react';
-
-// Import Konva components directly so server-side rendering works when the
-// `canvas` module is available (aliased to a stub in this example).
 import { Stage, Layer, Rect, Circle, Group } from 'react-konva';
 
 export type CanvasRendererProps = {

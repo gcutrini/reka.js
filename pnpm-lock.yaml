@@ -424,7 +424,7 @@ importers:
         version: 4.1.1
       '@prevwong/getdocs-ts':
         specifier: git+https://prevwong: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@github.com/prevwong/getdocs-ts.git
-        version: prevwong+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@github.com/prevwong/getdocs-ts/2d912fe897b2bd1fbff95d3d77179de82f9efb32
+        version: prevwong+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/github.com/prevwong/getdocs-ts/2d912fe897b2bd1fbff95d3d77179de82f9efb32
       '@radix-ui/colors':
         specifier: ^0.1.8
         version: 0.1.8
@@ -10905,7 +10905,7 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
     dev: false
 
-  prevwong+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@github.com/prevwong/getdocs-ts/2d912fe897b2bd1fbff95d3d77179de82f9efb32:
+  prevwong+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/github.com/prevwong/getdocs-ts/2d912fe897b2bd1fbff95d3d77179de82f9efb32:
     resolution: {commit: 2d912fe897b2bd1fbff95d3d77179de82f9efb32, repo: https://prevwong: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@github.com/prevwong/getdocs-ts.git, type: git}
     name: '@prevwong/getdocs-ts'
     version: 0.1.5
