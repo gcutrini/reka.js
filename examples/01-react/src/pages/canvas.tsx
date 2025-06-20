@@ -2,6 +2,7 @@ import { Reka } from '@rekajs/core';
 import { RekaProvider, observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
 import * as React from 'react';
+
 import { CanvasRenderer } from '@/components/CanvasRenderer';
 import { Editor } from '@/components/Editor';
 

@@ -9,7 +9,9 @@ import * as React from 'react';
 // the server. Otherwise `konva` tries to require the optional `canvas`
 // package which isn't installed in the repo.
 const useKonva = () => {
-  const [{ Stage, Layer, Rect, Circle, Group }, setKonva] = React.useState<any>({});
+  const [{ Stage, Layer, Rect, Circle, Group }, setKonva] = React.useState<any>(
+    {}
+  );
 
   React.useEffect(() => {
     let mounted = true;
