@@ -35,15 +35,15 @@ export type CanvasRendererProps = {
 export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
   // Load Konva components on the client only.
   const { Stage, Layer, Rect, Circle, Group } = useKonva();
+  React.useEffect(() => {
+    console.log('CanvasRenderer mounted. root view:', view);
+    return () => console.log('CanvasRenderer unmounted');
+  }, [view]);
 
   // `Stage` will be undefined until the dynamic import resolves.
   if (!Stage) {
     return null;
   }
-  React.useEffect(() => {
-    console.log('CanvasRenderer mounted. root view:', view);
-    return () => console.log('CanvasRenderer unmounted');
-  }, [view]);
 
   const renderView = (v: t.View, index: number): React.ReactNode => {
     console.log('Rendering node', v);
