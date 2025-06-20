@@ -2,48 +2,19 @@ import { observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
 import * as React from 'react';
 
-// Konva should only be imported on the client to avoid the optional
-// `canvas` dependency error when Next.js renders on the server.
-
-// `react-konva` is dynamically imported so the module is never evaluated on
-// the server. Otherwise `konva` tries to require the optional `canvas`
-// package which isn't installed in the repo.
-const useKonva = () => {
-  const [{ Stage, Layer, Rect, Circle, Group }, setKonva] = React.useState<any>(
-    {}
-  );
-
-  React.useEffect(() => {
-    let mounted = true;
-    import('react-konva').then((mod) => {
-      if (mounted) {
-        setKonva(mod);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return { Stage, Layer, Rect, Circle, Group };
-};
+// Import Konva components directly so server-side rendering works when the
+// `canvas` module is available (aliased to a stub in this example).
+import { Stage, Layer, Rect, Circle, Group } from 'react-konva';
 
 export type CanvasRendererProps = {
   view: t.View;
 };
 
 export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
-  // Load Konva components on the client only.
-  const { Stage, Layer, Rect, Circle, Group } = useKonva();
   React.useEffect(() => {
     console.log('CanvasRenderer mounted. root view:', view);
     return () => console.log('CanvasRenderer unmounted');
   }, [view]);
-
-  // `Stage` will be undefined until the dynamic import resolves.
-  if (!Stage) {
-    return null;
-  }
 
   const renderView = (v: t.View, index: number): React.ReactNode => {
     console.log('Rendering node', v);
