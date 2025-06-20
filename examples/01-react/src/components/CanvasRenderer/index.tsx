@@ -3,6 +3,42 @@ import * as t from '@rekajs/types';
 import * as React from 'react';
 import { Stage, Layer, Rect, Circle, Group, Text } from 'react-konva';
 
+const styleCache: Record<string, Partial<{
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+  color: string;
+  fontSize: number;
+}>> = {};
+
+function styleForClassName(className?: string) {
+  if (!className) return {};
+  if (styleCache[className]) return styleCache[className]!;
+  const el = document.createElement('div');
+  el.className = className;
+  el.style.position = 'absolute';
+  el.style.visibility = 'hidden';
+  document.body.appendChild(el);
+  const computed = window.getComputedStyle(el);
+  const style = {
+    fill:
+      computed.backgroundColor &&
+      computed.backgroundColor !== 'rgba(0, 0, 0, 0)'
+        ? computed.backgroundColor
+        : undefined,
+    stroke:
+      computed.borderStyle !== 'none' && computed.borderColor
+        ? computed.borderColor
+        : undefined,
+    strokeWidth: parseFloat(computed.borderWidth) || undefined,
+    color: computed.color || undefined,
+    fontSize: parseFloat(computed.fontSize) || undefined,
+  };
+  document.body.removeChild(el);
+  styleCache[className] = style;
+  return style;
+}
+
 export type CanvasRendererProps = {
   view: t.View;
 };
@@ -28,6 +64,8 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
     console.log('Rendering node', v);
     if (v.type === 'TagView') {
       const onClick = (v as any).props?.onClick;
+      const className = (v as any).props?.className as string | undefined;
+      const style = styleForClassName(className);
       if (v.tag === 'rect') {
         const {
           x = 0,
@@ -43,7 +81,9 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
             y={y}
             width={width}
             height={height}
-            fill={color}
+            fill={style.fill ?? color}
+            stroke={style.stroke}
+            strokeWidth={style.strokeWidth}
             onClick={onClick}
           />
         );
@@ -56,7 +96,9 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
             x={x}
             y={y}
             radius={r}
-            fill={color}
+            fill={style.fill ?? color}
+            stroke={style.stroke}
+            strokeWidth={style.strokeWidth}
             onClick={onClick}
           />
         );
@@ -64,7 +106,15 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
       if (v.tag === 'text') {
         const { value = '' } = (v as any).props;
         return (
-          <Text key={index} x={0} y={nextY()} text={String(value)} onClick={onClick} />
+          <Text
+            key={index}
+            x={0}
+            y={nextY()}
+            text={String(value)}
+            onClick={onClick}
+            fill={style.color}
+            fontSize={style.fontSize}
+          />
         );
       }
       return (
