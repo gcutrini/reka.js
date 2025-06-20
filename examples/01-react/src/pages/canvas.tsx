@@ -5,8 +5,14 @@ import * as React from 'react';
 
 import { Editor } from '@/components/Editor';
 
-// Use a static import so the renderer is bundled with the page.
-import { CanvasRenderer } from '@/components/CanvasRenderer';
+// Use a dynamic import so the renderer only loads on the client.
+import dynamic from 'next/dynamic';
+
+// Dynamically import the renderer so it's only executed on the client.
+const CanvasRenderer = dynamic(
+  () => import('@/components/CanvasRenderer').then((m) => m.CanvasRenderer),
+  { ssr: false }
+);
 
 const reka = Reka.create();
 
