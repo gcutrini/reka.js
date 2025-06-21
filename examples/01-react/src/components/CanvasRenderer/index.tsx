@@ -69,6 +69,7 @@ type RectProps = {
 const RectGraphic = ({ x, y, width, height, style, onClick }: RectProps) => {
   const draw = React.useCallback(
     (g: PIXI.Graphics) => {
+      console.log('draw rect', { x, y, width, height, style });
       g.clear();
       if (style.fill) {
         g.beginFill(cssColorToHex(style.fill));
@@ -79,7 +80,7 @@ const RectGraphic = ({ x, y, width, height, style, onClick }: RectProps) => {
       g.drawRect(0, 0, width, height);
       g.endFill();
     },
-    [style.fill, style.stroke, style.strokeWidth, width, height]
+    [style.fill, style.stroke, style.strokeWidth, width, height, x, y]
   );
 
   return (
@@ -104,6 +105,7 @@ type CircleProps = {
 const CircleGraphic = ({ x, y, r, style, onClick }: CircleProps) => {
   const draw = React.useCallback(
     (g: PIXI.Graphics) => {
+      console.log('draw circle', { x, y, r, style });
       g.clear();
       if (style.fill) {
         g.beginFill(cssColorToHex(style.fill));
@@ -114,7 +116,7 @@ const CircleGraphic = ({ x, y, r, style, onClick }: CircleProps) => {
       g.drawCircle(0, 0, r);
       g.endFill();
     },
-    [style.fill, style.stroke, style.strokeWidth, r]
+    [style.fill, style.stroke, style.strokeWidth, r, x, y]
   );
 
   return (
@@ -137,6 +139,7 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
     // Avoid rendering on the server to prevent useLayoutEffect warnings
     return null;
   }
+  console.log('CanvasRenderer rendering', view);
   React.useEffect(() => {
     console.log('CanvasRenderer mounted. root view:', view);
     return () => console.log('CanvasRenderer unmounted');
