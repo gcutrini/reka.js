@@ -1,7 +1,8 @@
 import { observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
 import * as React from 'react';
-import { Stage, Layer, Rect, Circle, Group, Text } from 'react-konva';
+import { Stage, Container, Graphics, Text } from '@pixi/react';
+import * as PIXI from 'pixi.js';
 
 const styleCache: Record<string, Partial<{
   fill: string;
@@ -74,32 +75,61 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
           height = 0,
           color = 'black',
         } = (v as any).props;
+
+        const draw = React.useCallback(
+          (g: PIXI.Graphics) => {
+            g.clear();
+            if (style.fill ?? color) {
+              g.beginFill(PIXI.utils.string2hex(style.fill ?? color));
+            }
+            if (style.stroke) {
+              g.lineStyle(
+                style.strokeWidth ?? 1,
+                PIXI.utils.string2hex(style.stroke)
+              );
+            }
+            g.drawRect(x, y, width, height);
+            g.endFill();
+          },
+          [x, y, width, height, color, style]
+        );
+
         return (
-          <Rect
+          <Graphics
             key={index}
-            x={x}
-            y={y}
-            width={width}
-            height={height}
-            fill={style.fill ?? color}
-            stroke={style.stroke}
-            strokeWidth={style.strokeWidth}
-            onClick={onClick}
+            draw={draw}
+            interactive={!!onClick}
+            pointertap={onClick}
           />
         );
       }
       if (v.tag === 'circle') {
         const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
+
+        const draw = React.useCallback(
+          (g: PIXI.Graphics) => {
+            g.clear();
+            if (style.fill ?? color) {
+              g.beginFill(PIXI.utils.string2hex(style.fill ?? color));
+            }
+            if (style.stroke) {
+              g.lineStyle(
+                style.strokeWidth ?? 1,
+                PIXI.utils.string2hex(style.stroke)
+              );
+            }
+            g.drawCircle(x, y, r);
+            g.endFill();
+          },
+          [x, y, r, color, style]
+        );
+
         return (
-          <Circle
+          <Graphics
             key={index}
-            x={x}
-            y={y}
-            radius={r}
-            fill={style.fill ?? color}
-            stroke={style.stroke}
-            strokeWidth={style.strokeWidth}
-            onClick={onClick}
+            draw={draw}
+            interactive={!!onClick}
+            pointertap={onClick}
           />
         );
       }
@@ -111,16 +141,16 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
             x={0}
             y={nextY()}
             text={String(value)}
-            onClick={onClick}
-            fill={style.color}
-            fontSize={style.fontSize}
+            interactive={!!onClick}
+            pointertap={onClick}
+            style={{ fill: style.color, fontSize: style.fontSize }}
           />
         );
       }
       return (
-        <Group key={index} onClick={onClick}>
+        <Container key={index} interactive={!!onClick} pointertap={onClick}>
           {(v as any).children.map(renderView)}
-        </Group>
+        </Container>
       );
     }
 
@@ -149,7 +179,7 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
 
   return (
     <Stage width={400} height={300}>
-      <Layer>{renderView(view, 0)}</Layer>
+      <Container>{renderView(view, 0)}</Container>
     </Stage>
   );
 });

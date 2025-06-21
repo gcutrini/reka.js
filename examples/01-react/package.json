@@ -9,21 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next/font": "13.1.2",
+    "@pixi/react": "7.1.2",
+    "@rekajs/core": "*",
+    "@rekajs/parser": "*",
     "@rekajs/react": "*",
     "@rekajs/react-code-editor": "*",
-    "@rekajs/core": "*",
     "@rekajs/types": "*",
-    "@rekajs/parser": "*",
-    "@next/font": "13.1.2",
     "@types/node": "18.7.15",
+    "canvas": "^3.1.1",
     "eslint": "^8.23.0",
     "eslint-config-next": "12.2.5",
     "next": "12.2.5",
+    "pixi.js": "^6.5.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-konva": "18.2.10",
-    "konva": "9.3.20",
-    "canvas": "^3.1.1",
     "typescript": "4.9.4"
   },
   "devDependencies": {
