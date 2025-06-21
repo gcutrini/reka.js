@@ -75,7 +75,12 @@ const RectGraphic = ({ x, y, width, height, style, onClick }: RectProps) => {
         g.beginFill(cssColorToHex(style.fill));
       }
       if (style.stroke) {
-        g.lineStyle(style.strokeWidth ?? 1, cssColorToHex(style.stroke));
+        g.lineStyle(
+          style.strokeWidth ?? 1,
+          cssColorToHex(style.stroke),
+          1,
+          0.5
+        );
       }
       g.drawRect(0, 0, width, height);
       g.endFill();
@@ -111,7 +116,12 @@ const CircleGraphic = ({ x, y, r, style, onClick }: CircleProps) => {
         g.beginFill(cssColorToHex(style.fill));
       }
       if (style.stroke) {
-        g.lineStyle(style.strokeWidth ?? 1, cssColorToHex(style.stroke));
+        g.lineStyle(
+          style.strokeWidth ?? 1,
+          cssColorToHex(style.stroke),
+          1,
+          0.5
+        );
       }
       g.drawCircle(0, 0, r);
       g.endFill();
@@ -254,7 +264,9 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
         antialias: true,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
+        roundPixels: true,
       }}
+      style={{ width: 400, height: 300 }}
     >
       <Container>{renderView(view, 0)}</Container>
     </Stage>
