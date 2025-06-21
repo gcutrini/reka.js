@@ -246,7 +246,16 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
   };
 
   return (
-    <Stage width={400} height={300} options={{ backgroundColor: 0xffffff }}>
+    <Stage
+      width={400}
+      height={300}
+      options={{
+        backgroundColor: 0xffffff,
+        antialias: true,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+      }}
+    >
       <Container>{renderView(view, 0)}</Container>
     </Stage>
   );
