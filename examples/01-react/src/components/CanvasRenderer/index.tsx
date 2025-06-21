@@ -4,6 +4,9 @@ import * as t from '@rekajs/types';
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
 
+PIXI.GRAPHICS_CURVES.adaptive = false;
+PIXI.GRAPHICS_CURVES.maxSegments = 64;
+
 const styleCache: Record<
   string,
   Partial<{
