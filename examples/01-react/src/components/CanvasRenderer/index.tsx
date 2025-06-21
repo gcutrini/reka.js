@@ -43,6 +43,14 @@ function styleForClassName(className?: string) {
   return style;
 }
 
+function cssColorToHex(color: string): number {
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return 0xffffff;
+  ctx.fillStyle = color;
+  const hex = ctx.fillStyle;
+  return PIXI.utils.string2hex(hex);
+}
+
 type ShapeStyle = {
   fill?: string;
   stroke?: string;
@@ -63,10 +71,10 @@ const RectGraphic = ({ x, y, width, height, style, onClick }: RectProps) => {
     (g: PIXI.Graphics) => {
       g.clear();
       if (style.fill) {
-        g.beginFill(PIXI.utils.string2hex(style.fill));
+        g.beginFill(cssColorToHex(style.fill));
       }
       if (style.stroke) {
-        g.lineStyle(style.strokeWidth ?? 1, PIXI.utils.string2hex(style.stroke));
+        g.lineStyle(style.strokeWidth ?? 1, cssColorToHex(style.stroke));
       }
       g.drawRect(0, 0, width, height);
       g.endFill();
@@ -98,10 +106,10 @@ const CircleGraphic = ({ x, y, r, style, onClick }: CircleProps) => {
     (g: PIXI.Graphics) => {
       g.clear();
       if (style.fill) {
-        g.beginFill(PIXI.utils.string2hex(style.fill));
+        g.beginFill(cssColorToHex(style.fill));
       }
       if (style.stroke) {
-        g.lineStyle(style.strokeWidth ?? 1, PIXI.utils.string2hex(style.stroke));
+        g.lineStyle(style.strokeWidth ?? 1, cssColorToHex(style.stroke));
       }
       g.drawCircle(0, 0, r);
       g.endFill();
@@ -200,7 +208,7 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
             text={String(value)}
             interactive={!!onClick}
             pointertap={onClick}
-            style={{ fill: style.color, fontSize: style.fontSize }}
+            style={{ fill: style.color ?? '#000000', fontSize: style.fontSize }}
           />
         );
       }
