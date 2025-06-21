@@ -43,6 +43,83 @@ function styleForClassName(className?: string) {
   return style;
 }
 
+type ShapeStyle = {
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+};
+
+type RectProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  style: ShapeStyle;
+  onClick?: () => void;
+};
+
+const RectGraphic = ({ x, y, width, height, style, onClick }: RectProps) => {
+  const draw = React.useCallback(
+    (g: PIXI.Graphics) => {
+      g.clear();
+      if (style.fill) {
+        g.beginFill(PIXI.utils.string2hex(style.fill));
+      }
+      if (style.stroke) {
+        g.lineStyle(style.strokeWidth ?? 1, PIXI.utils.string2hex(style.stroke));
+      }
+      g.drawRect(0, 0, width, height);
+      g.endFill();
+    },
+    [style.fill, style.stroke, style.strokeWidth, width, height]
+  );
+
+  return (
+    <Graphics
+      x={x}
+      y={y}
+      draw={draw}
+      interactive={!!onClick}
+      pointertap={onClick}
+    />
+  );
+};
+
+type CircleProps = {
+  x: number;
+  y: number;
+  r: number;
+  style: ShapeStyle;
+  onClick?: () => void;
+};
+
+const CircleGraphic = ({ x, y, r, style, onClick }: CircleProps) => {
+  const draw = React.useCallback(
+    (g: PIXI.Graphics) => {
+      g.clear();
+      if (style.fill) {
+        g.beginFill(PIXI.utils.string2hex(style.fill));
+      }
+      if (style.stroke) {
+        g.lineStyle(style.strokeWidth ?? 1, PIXI.utils.string2hex(style.stroke));
+      }
+      g.drawCircle(0, 0, r);
+      g.endFill();
+    },
+    [style.fill, style.stroke, style.strokeWidth, r]
+  );
+
+  return (
+    <Graphics
+      x={x}
+      y={y}
+      draw={draw}
+      interactive={!!onClick}
+      pointertap={onClick}
+    />
+  );
+};
+
 export type CanvasRendererProps = {
   view: t.View;
 };
@@ -79,54 +156,37 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
           color = 'black',
         } = (v as any).props;
 
-        const draw = (g: PIXI.Graphics) => {
-          g.clear();
-          if (style.fill ?? color) {
-            g.beginFill(PIXI.utils.string2hex(style.fill ?? color));
-          }
-          if (style.stroke) {
-            g.lineStyle(
-              style.strokeWidth ?? 1,
-              PIXI.utils.string2hex(style.stroke)
-            );
-          }
-          g.drawRect(x, y, width, height);
-          g.endFill();
-        };
-
         return (
-          <Graphics
+          <RectGraphic
             key={index}
-            draw={draw}
-            interactive={!!onClick}
-            pointertap={onClick}
+            x={x}
+            y={y}
+            width={width}
+            height={height}
+            style={{
+              fill: style.fill ?? color,
+              stroke: style.stroke,
+              strokeWidth: style.strokeWidth,
+            }}
+            onClick={onClick}
           />
         );
       }
       if (v.tag === 'circle') {
         const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
 
-        const draw = (g: PIXI.Graphics) => {
-          g.clear();
-          if (style.fill ?? color) {
-            g.beginFill(PIXI.utils.string2hex(style.fill ?? color));
-          }
-          if (style.stroke) {
-            g.lineStyle(
-              style.strokeWidth ?? 1,
-              PIXI.utils.string2hex(style.stroke)
-            );
-          }
-          g.drawCircle(x, y, r);
-          g.endFill();
-        };
-
         return (
-          <Graphics
+          <CircleGraphic
             key={index}
-            draw={draw}
-            interactive={!!onClick}
-            pointertap={onClick}
+            x={x}
+            y={y}
+            r={r}
+            style={{
+              fill: style.fill ?? color,
+              stroke: style.stroke,
+              strokeWidth: style.strokeWidth,
+            }}
+            onClick={onClick}
           />
         );
       }
