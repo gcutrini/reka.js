@@ -1,16 +1,19 @@
+import { Stage, Container, Graphics, Text } from '@pixi/react';
 import { observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
-import * as React from 'react';
-import { Stage, Container, Graphics, Text } from '@pixi/react';
 import * as PIXI from 'pixi.js';
+import * as React from 'react';
 
-const styleCache: Record<string, Partial<{
-  fill: string;
-  stroke: string;
-  strokeWidth: number;
-  color: string;
-  fontSize: number;
-}>> = {};
+const styleCache: Record<
+  string,
+  Partial<{
+    fill: string;
+    stroke: string;
+    strokeWidth: number;
+    color: string;
+    fontSize: number;
+  }>
+> = {};
 
 function styleForClassName(className?: string) {
   if (!className) return {};
@@ -76,23 +79,20 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
           color = 'black',
         } = (v as any).props;
 
-        const draw = React.useCallback(
-          (g: PIXI.Graphics) => {
-            g.clear();
-            if (style.fill ?? color) {
-              g.beginFill(PIXI.utils.string2hex(style.fill ?? color));
-            }
-            if (style.stroke) {
-              g.lineStyle(
-                style.strokeWidth ?? 1,
-                PIXI.utils.string2hex(style.stroke)
-              );
-            }
-            g.drawRect(x, y, width, height);
-            g.endFill();
-          },
-          [x, y, width, height, color, style]
-        );
+        const draw = (g: PIXI.Graphics) => {
+          g.clear();
+          if (style.fill ?? color) {
+            g.beginFill(PIXI.utils.string2hex(style.fill ?? color));
+          }
+          if (style.stroke) {
+            g.lineStyle(
+              style.strokeWidth ?? 1,
+              PIXI.utils.string2hex(style.stroke)
+            );
+          }
+          g.drawRect(x, y, width, height);
+          g.endFill();
+        };
 
         return (
           <Graphics
@@ -106,23 +106,20 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
       if (v.tag === 'circle') {
         const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
 
-        const draw = React.useCallback(
-          (g: PIXI.Graphics) => {
-            g.clear();
-            if (style.fill ?? color) {
-              g.beginFill(PIXI.utils.string2hex(style.fill ?? color));
-            }
-            if (style.stroke) {
-              g.lineStyle(
-                style.strokeWidth ?? 1,
-                PIXI.utils.string2hex(style.stroke)
-              );
-            }
-            g.drawCircle(x, y, r);
-            g.endFill();
-          },
-          [x, y, r, color, style]
-        );
+        const draw = (g: PIXI.Graphics) => {
+          g.clear();
+          if (style.fill ?? color) {
+            g.beginFill(PIXI.utils.string2hex(style.fill ?? color));
+          }
+          if (style.stroke) {
+            g.lineStyle(
+              style.strokeWidth ?? 1,
+              PIXI.utils.string2hex(style.stroke)
+            );
+          }
+          g.drawCircle(x, y, r);
+          g.endFill();
+        };
 
         return (
           <Graphics
