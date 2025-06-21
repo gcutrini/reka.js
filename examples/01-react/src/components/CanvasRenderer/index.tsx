@@ -175,7 +175,7 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
   };
 
   return (
-    <Stage width={400} height={300}>
+    <Stage width={400} height={300} options={{ backgroundColor: 0xffffff }}>
       <Container>{renderView(view, 0)}</Container>
     </Stage>
   );
