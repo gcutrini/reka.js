@@ -1,15 +1,22 @@
+import { Stage, Container, Graphics, Text } from '@pixi/react';
 import { observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
+import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { Stage, Layer, Rect, Circle, Group, Text } from 'react-konva';
 
-const styleCache: Record<string, Partial<{
-  fill: string;
-  stroke: string;
-  strokeWidth: number;
-  color: string;
-  fontSize: number;
-}>> = {};
+PIXI.GRAPHICS_CURVES.adaptive = false;
+PIXI.GRAPHICS_CURVES.maxSegments = 64;
+
+const styleCache: Record<
+  string,
+  Partial<{
+    fill: string;
+    stroke: string;
+    strokeWidth: number;
+    color: string;
+    fontSize: number;
+  }>
+> = {};
 
 function styleForClassName(className?: string) {
   if (!className) return {};
@@ -39,6 +46,101 @@ function styleForClassName(className?: string) {
   return style;
 }
 
+function cssColorToHex(color: string): number {
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return 0xffffff;
+  ctx.fillStyle = color;
+  const hex = ctx.fillStyle;
+  return PIXI.utils.string2hex(hex);
+}
+
+type ShapeStyle = {
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+};
+
+type RectProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  style: ShapeStyle;
+  onClick?: () => void;
+};
+
+const RectGraphic = ({ x, y, width, height, style, onClick }: RectProps) => {
+  const draw = React.useCallback(
+    (g: PIXI.Graphics) => {
+      g.clear();
+      if (style.fill) {
+        g.beginFill(cssColorToHex(style.fill));
+      }
+      if (style.stroke) {
+        g.lineStyle(
+          style.strokeWidth ?? 1,
+          cssColorToHex(style.stroke),
+          1,
+          0.5
+        );
+      }
+      g.drawRect(0, 0, width, height);
+      g.endFill();
+    },
+    [style.fill, style.stroke, style.strokeWidth, width, height, x, y]
+  );
+
+  return (
+    <Graphics
+      x={x}
+      y={y}
+      draw={draw}
+      interactive={!!onClick}
+      pointertap={onClick}
+    />
+  );
+};
+
+type CircleProps = {
+  x: number;
+  y: number;
+  r: number;
+  style: ShapeStyle;
+  onClick?: () => void;
+};
+
+const CircleGraphic = ({ x, y, r, style, onClick }: CircleProps) => {
+  const draw = React.useCallback(
+    (g: PIXI.Graphics) => {
+      g.clear();
+      if (style.fill) {
+        g.beginFill(cssColorToHex(style.fill));
+      }
+      if (style.stroke) {
+        g.lineStyle(
+          style.strokeWidth ?? 1,
+          cssColorToHex(style.stroke),
+          1,
+          0.5
+        );
+      }
+      g.drawCircle(0, 0, r);
+      g.endFill();
+    },
+    [style.fill, style.stroke, style.strokeWidth, r, x, y]
+  );
+
+  return (
+    <Graphics
+      x={x}
+      y={y}
+      draw={draw}
+      interactive={!!onClick}
+      pointertap={onClick}
+    />
+  );
+};
+
 export type CanvasRendererProps = {
   view: t.View;
 };
@@ -48,10 +150,6 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
     // Avoid rendering on the server to prevent useLayoutEffect warnings
     return null;
   }
-  React.useEffect(() => {
-    console.log('CanvasRenderer mounted. root view:', view);
-    return () => console.log('CanvasRenderer unmounted');
-  }, [view]);
 
   let yCursor = 0;
   const nextY = () => {
@@ -61,7 +159,6 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
   };
 
   const renderView = (v: t.View, index: number): React.ReactNode => {
-    console.log('Rendering node', v);
     if (v.type === 'TagView') {
       const onClick = (v as any).props?.onClick;
       const className = (v as any).props?.className as string | undefined;
@@ -74,31 +171,37 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
           height = 0,
           color = 'black',
         } = (v as any).props;
+
         return (
-          <Rect
+          <RectGraphic
             key={index}
             x={x}
             y={y}
             width={width}
             height={height}
-            fill={style.fill ?? color}
-            stroke={style.stroke}
-            strokeWidth={style.strokeWidth}
+            style={{
+              fill: style.fill ?? color,
+              stroke: style.stroke,
+              strokeWidth: style.strokeWidth,
+            }}
             onClick={onClick}
           />
         );
       }
       if (v.tag === 'circle') {
         const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
+
         return (
-          <Circle
+          <CircleGraphic
             key={index}
             x={x}
             y={y}
-            radius={r}
-            fill={style.fill ?? color}
-            stroke={style.stroke}
-            strokeWidth={style.strokeWidth}
+            r={r}
+            style={{
+              fill: style.fill ?? color,
+              stroke: style.stroke,
+              strokeWidth: style.strokeWidth,
+            }}
             onClick={onClick}
           />
         );
@@ -111,16 +214,16 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
             x={0}
             y={nextY()}
             text={String(value)}
-            onClick={onClick}
-            fill={style.color}
-            fontSize={style.fontSize}
+            interactive={!!onClick}
+            pointertap={onClick}
+            style={{ fill: style.color ?? '#000000', fontSize: style.fontSize }}
           />
         );
       }
       return (
-        <Group key={index} onClick={onClick}>
+        <Container key={index} interactive={!!onClick} pointertap={onClick}>
           {(v as any).children.map(renderView)}
-        </Group>
+        </Container>
       );
     }
 
@@ -148,8 +251,19 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
   };
 
   return (
-    <Stage width={400} height={300}>
-      <Layer>{renderView(view, 0)}</Layer>
+    <Stage
+      width={400}
+      height={300}
+      options={{
+        backgroundColor: 0xffffff,
+        antialias: true,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+        roundPixels: true,
+      }}
+      style={{ width: 400, height: 300 }}
+    >
+      <Container>{renderView(view, 0)}</Container>
     </Stage>
   );
 });
