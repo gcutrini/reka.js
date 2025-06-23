@@ -110,7 +110,7 @@ const frame = reka.createFrame({
 frame.compute(true);
 
 const PolotnoView = observer(() => {
-  return frame.view ? <PolotnoRenderer view={frame.view} /> : null;
+  return <PolotnoRenderer frame={frame} />;
 });
 
 export default function PolotnoPage() {
