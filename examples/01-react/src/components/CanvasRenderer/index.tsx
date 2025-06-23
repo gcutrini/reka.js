@@ -1,3 +1,4 @@
+import { Frame } from '@rekajs/core';
 import { observer } from '@rekajs/react';
 import * as t from '@rekajs/types';
 import * as React from 'react';
@@ -48,10 +49,6 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
     // Avoid rendering on the server to prevent useLayoutEffect warnings
     return null;
   }
-  React.useEffect(() => {
-    console.log('CanvasRenderer mounted. root view:', view);
-    return () => console.log('CanvasRenderer unmounted');
-  }, [view]);
 
   let yCursor = 0;
   const nextY = () => {
@@ -60,9 +57,8 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
     return y;
   };
 
-  const renderView = (v: t.View, index: number): React.ReactNode => {
-    console.log('Rendering node', v);
-    if (v.type === 'TagView') {
+  const renderView = (v: t.View): React.ReactNode => {
+    if (v instanceof t.TagView) {
       const onClick = (v as any).props?.onClick;
       const className = (v as any).props?.className as string | undefined;
       const style = styleForClassName(className);
@@ -76,7 +72,7 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
         } = (v as any).props;
         return (
           <Rect
-            key={index}
+            key={v.id}
             x={x}
             y={y}
             width={width}
@@ -92,7 +88,7 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
         const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
         return (
           <Circle
-            key={index}
+            key={v.id}
             x={x}
             y={y}
             radius={r}
@@ -107,7 +103,7 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
         const { value = '' } = (v as any).props;
         return (
           <Text
-            key={index}
+            key={v.id}
             x={0}
             y={nextY()}
             text={String(value)}
@@ -118,29 +114,40 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
         );
       }
       return (
-        <Group key={index} onClick={onClick}>
-          {(v as any).children.map(renderView)}
+        <Group key={v.id} onClick={onClick}>
+          {v.children.map((child) => renderView(child))}
         </Group>
       );
     }
 
-    if (v.type === 'RekaComponentView' || v.type === 'ExternalComponentView') {
+    if (v instanceof t.RekaComponentView) {
       return (
-        <React.Fragment key={index}>
-          {(v as any).render.map(renderView)}
+        <React.Fragment key={v.id}>
+          {v.render.map((r) => renderView(r))}
         </React.Fragment>
       );
     }
 
+    if (v instanceof t.ExternalComponentView) {
+      return v.component.render(v.props);
+    }
+
     if (
-      v.type === 'FrameView' ||
-      v.type === 'SlotView' ||
-      v.type === 'FragmentView'
+      v instanceof t.FrameView ||
+      v instanceof t.SlotView ||
+      v instanceof t.FragmentView
     ) {
       return (
-        <React.Fragment key={index}>
-          {(v as any).children.map(renderView)}
+        <React.Fragment key={v.id}>
+          {v.children.map((child) => renderView(child))}
         </React.Fragment>
+      );
+    }
+    if (v instanceof t.ErrorSystemView) {
+      return (
+        <Group key={v.id}>
+          <Text text={`Something went wrong. ${v.error}`} />
+        </Group>
       );
     }
 
@@ -149,7 +156,19 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
 
   return (
     <Stage width={400} height={300}>
-      <Layer>{renderView(view, 0)}</Layer>
+      <Layer>{renderView(view)}</Layer>
     </Stage>
   );
+});
+
+export type RenderFrameProps = {
+  frame: Frame;
+};
+
+export const RenderFrame = observer((props: RenderFrameProps) => {
+  if (!props.frame.view) {
+    return null;
+  }
+
+  return <CanvasRenderer view={props.frame.view} />;
 });
