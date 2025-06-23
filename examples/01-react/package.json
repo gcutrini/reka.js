@@ -24,7 +24,8 @@
     "react-konva": "18.2.10",
     "konva": "9.3.20",
     "canvas": "^3.1.1",
-    "typescript": "4.9.4"
+    "typescript": "4.9.4",
+    "polotno": "^2.24.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.14"
