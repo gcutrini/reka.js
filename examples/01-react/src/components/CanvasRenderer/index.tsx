@@ -25,6 +25,8 @@ type StyleInfo = {
 
 const styleCache: Record<string, Partial<StyleInfo>> = {};
 
+// Handle utility classes that rely on container size which can't be computed
+// from a detached DOM element.
 function parseTailwindStyles(className: string): Partial<StyleInfo> {
   const style: Partial<StyleInfo> = {};
   for (const cls of className.split(/\s+/)) {
@@ -32,26 +34,6 @@ function parseTailwindStyles(className: string): Partial<StyleInfo> {
       style.width = STAGE_WIDTH;
     } else if (cls === 'h-full') {
       style.height = STAGE_HEIGHT;
-    } else if (/^w-(\d+)$/.test(cls)) {
-      style.width = parseInt(cls.slice(2)) * 4;
-    } else if (/^h-(\d+)$/.test(cls)) {
-      style.height = parseInt(cls.slice(2)) * 4;
-    } else if (/^px-(\d+)$/.test(cls)) {
-      const v = parseInt(cls.slice(3)) * 4;
-      style.paddingLeft = v;
-      style.paddingRight = v;
-    } else if (/^py-(\d+)$/.test(cls)) {
-      const v = parseInt(cls.slice(3)) * 4;
-      style.paddingTop = v;
-      style.paddingBottom = v;
-    } else if (/^mt-(\d+)$/.test(cls)) {
-      style.marginTop = parseInt(cls.slice(3)) * 4;
-    } else if (/^mb-(\d+)$/.test(cls)) {
-      style.marginBottom = parseInt(cls.slice(3)) * 4;
-    } else if (cls === 'text-lg') {
-      style.fontSize = 18;
-    } else if (cls === 'border-2') {
-      style.strokeWidth = 2;
     }
   }
   return style;
@@ -63,14 +45,18 @@ function styleForClassName(className?: string): Partial<StyleInfo> {
 
   const tailwind = parseTailwindStyles(className);
 
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.visibility = 'hidden';
+  container.style.width = `${STAGE_WIDTH}px`;
+  container.style.height = `${STAGE_HEIGHT}px`;
+
   const el = document.createElement('div');
   el.className = className;
-  el.style.position = 'absolute';
-  el.style.visibility = 'hidden';
-  document.body.appendChild(el);
+  container.appendChild(el);
+  document.body.appendChild(container);
+
   const computed = window.getComputedStyle(el);
-  const borderWidth = parseFloat(computed.borderWidth);
-  const fontSize = parseFloat(computed.fontSize);
   const style: Partial<StyleInfo> = {
     fill:
       computed.backgroundColor &&
@@ -81,15 +67,22 @@ function styleForClassName(className?: string): Partial<StyleInfo> {
       computed.borderStyle !== 'none' && computed.borderColor
         ? computed.borderColor
         : undefined,
-    strokeWidth:
-      tailwind.strokeWidth ?? (!isNaN(borderWidth) ? borderWidth : undefined),
+    strokeWidth: parseFloat(computed.borderWidth) || undefined,
     color: computed.color || undefined,
-    fontSize: tailwind.fontSize ?? (!isNaN(fontSize) ? fontSize : undefined),
+    fontSize: parseFloat(computed.fontSize) || undefined,
+    width: parseFloat(computed.width) || undefined,
+    height: parseFloat(computed.height) || undefined,
+    paddingLeft: parseFloat(computed.paddingLeft) || undefined,
+    paddingRight: parseFloat(computed.paddingRight) || undefined,
+    paddingTop: parseFloat(computed.paddingTop) || undefined,
+    paddingBottom: parseFloat(computed.paddingBottom) || undefined,
+    marginTop: parseFloat(computed.marginTop) || undefined,
+    marginBottom: parseFloat(computed.marginBottom) || undefined,
   };
 
   Object.assign(style, tailwind);
 
-  document.body.removeChild(el);
+  document.body.removeChild(container);
   styleCache[className] = style;
   return style;
 }
@@ -115,8 +108,10 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
       const propX = (v as any).props?.x;
       const propY = (v as any).props?.y;
 
-      let localX = x + (typeof propX === 'number' ? propX : parseFloat(propX) || 0);
-      let localY = y + (typeof propY === 'number' ? propY : parseFloat(propY) || 0);
+      let localX =
+        x + (typeof propX === 'number' ? propX : parseFloat(propX) || 0);
+      let localY =
+        y + (typeof propY === 'number' ? propY : parseFloat(propY) || 0);
 
       if (style.paddingLeft) localX += style.paddingLeft;
       if (style.paddingTop) localY += style.paddingTop;
@@ -253,7 +248,10 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
       return {
         node: (
           <Group key={v.id}>
-            <Text text={`Something went wrong. ${v.error}`} fontSize={fontSize} />
+            <Text
+              text={`Something went wrong. ${v.error}`}
+              fontSize={fontSize}
+            />
           </Group>
         ),
         width: 0,
