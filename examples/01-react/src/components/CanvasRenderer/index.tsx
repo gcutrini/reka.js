@@ -4,24 +4,72 @@ import * as t from '@rekajs/types';
 import * as React from 'react';
 import { Stage, Layer, Rect, Circle, Group, Text } from 'react-konva';
 
-const styleCache: Record<string, Partial<{
-  fill: string;
-  stroke: string;
-  strokeWidth: number;
-  color: string;
-  fontSize: number;
-}>> = {};
+const STAGE_WIDTH = 400;
+const STAGE_HEIGHT = 300;
 
-function styleForClassName(className?: string) {
+type StyleInfo = {
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  color?: string;
+  fontSize?: number;
+  width?: number;
+  height?: number;
+  paddingLeft?: number;
+  paddingRight?: number;
+  paddingTop?: number;
+  paddingBottom?: number;
+  marginTop?: number;
+  marginBottom?: number;
+};
+
+const styleCache: Record<string, Partial<StyleInfo>> = {};
+
+function parseTailwindStyles(className: string): Partial<StyleInfo> {
+  const style: Partial<StyleInfo> = {};
+  for (const cls of className.split(/\s+/)) {
+    if (cls === 'w-full') {
+      style.width = STAGE_WIDTH;
+    } else if (cls === 'h-full') {
+      style.height = STAGE_HEIGHT;
+    } else if (/^w-(\d+)$/.test(cls)) {
+      style.width = parseInt(cls.slice(2)) * 4;
+    } else if (/^h-(\d+)$/.test(cls)) {
+      style.height = parseInt(cls.slice(2)) * 4;
+    } else if (/^px-(\d+)$/.test(cls)) {
+      const v = parseInt(cls.slice(3)) * 4;
+      style.paddingLeft = v;
+      style.paddingRight = v;
+    } else if (/^py-(\d+)$/.test(cls)) {
+      const v = parseInt(cls.slice(3)) * 4;
+      style.paddingTop = v;
+      style.paddingBottom = v;
+    } else if (/^mt-(\d+)$/.test(cls)) {
+      style.marginTop = parseInt(cls.slice(3)) * 4;
+    } else if (/^mb-(\d+)$/.test(cls)) {
+      style.marginBottom = parseInt(cls.slice(3)) * 4;
+    } else if (cls === 'text-lg') {
+      style.fontSize = 18;
+    } else if (cls === 'border-2') {
+      style.strokeWidth = 2;
+    }
+  }
+  return style;
+}
+
+function styleForClassName(className?: string): Partial<StyleInfo> {
   if (!className) return {};
   if (styleCache[className]) return styleCache[className]!;
+
+  const tailwind = parseTailwindStyles(className);
+
   const el = document.createElement('div');
   el.className = className;
   el.style.position = 'absolute';
   el.style.visibility = 'hidden';
   document.body.appendChild(el);
   const computed = window.getComputedStyle(el);
-  const style = {
+  const style: Partial<StyleInfo> = {
     fill:
       computed.backgroundColor &&
       computed.backgroundColor !== 'rgba(0, 0, 0, 0)'
@@ -31,10 +79,13 @@ function styleForClassName(className?: string) {
       computed.borderStyle !== 'none' && computed.borderColor
         ? computed.borderColor
         : undefined,
-    strokeWidth: parseFloat(computed.borderWidth) || undefined,
+    strokeWidth: tailwind.strokeWidth ?? parseFloat(computed.borderWidth) || undefined,
     color: computed.color || undefined,
-    fontSize: parseFloat(computed.fontSize) || undefined,
+    fontSize: tailwind.fontSize ?? parseFloat(computed.fontSize) || undefined,
   };
+
+  Object.assign(style, tailwind);
+
   document.body.removeChild(el);
   styleCache[className] = style;
   return style;
@@ -50,86 +101,131 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
     return null;
   }
 
-  let yCursor = 0;
-  const nextY = () => {
-    const y = yCursor;
-    yCursor += 20;
-    return y;
-  };
+  type RenderResult = { node: React.ReactNode; width: number; height: number };
 
-  const renderView = (v: t.View): React.ReactNode => {
+  const renderView = (v: t.View, x: number, y: number): RenderResult => {
     if (v instanceof t.TagView) {
       const onClick = (v as any).props?.onClick;
       const className = (v as any).props?.className as string | undefined;
       const style = styleForClassName(className);
+
+      const propX = (v as any).props?.x;
+      const propY = (v as any).props?.y;
+
+      let localX = x + (typeof propX === 'number' ? propX : parseFloat(propX) || 0);
+      let localY = y + (typeof propY === 'number' ? propY : parseFloat(propY) || 0);
+
+      if (style.paddingLeft) localX += style.paddingLeft;
+      if (style.paddingTop) localY += style.paddingTop;
+
       if (v.tag === 'rect') {
         const {
-          x = 0,
-          y = 0,
-          width = 0,
-          height = 0,
+          width = style.width ?? 0,
+          height = style.height ?? 0,
           color = 'black',
         } = (v as any).props;
-        return (
-          <Rect
-            key={v.id}
-            x={x}
-            y={y}
-            width={width}
-            height={height}
-            fill={style.fill ?? color}
-            stroke={style.stroke}
-            strokeWidth={style.strokeWidth}
-            onClick={onClick}
-          />
-        );
+
+        return {
+          node: (
+            <Rect
+              key={v.id}
+              x={localX}
+              y={localY}
+              width={width}
+              height={height}
+              fill={style.fill ?? color}
+              stroke={style.stroke}
+              strokeWidth={style.strokeWidth}
+              onClick={onClick}
+            />
+          ),
+          width,
+          height,
+        };
       }
+
       if (v.tag === 'circle') {
-        const { x = 0, y = 0, r = 0, color = 'black' } = (v as any).props;
-        return (
-          <Circle
-            key={v.id}
-            x={x}
-            y={y}
-            radius={r}
-            fill={style.fill ?? color}
-            stroke={style.stroke}
-            strokeWidth={style.strokeWidth}
-            onClick={onClick}
-          />
-        );
+        const { r = 0, color = 'black' } = (v as any).props;
+        const radius = r;
+        return {
+          node: (
+            <Circle
+              key={v.id}
+              x={localX}
+              y={localY}
+              radius={radius}
+              fill={style.fill ?? color}
+              stroke={style.stroke}
+              strokeWidth={style.strokeWidth}
+              onClick={onClick}
+            />
+          ),
+          width: radius * 2,
+          height: radius * 2,
+        };
       }
+
       if (v.tag === 'text') {
         const { value = '' } = (v as any).props;
-        return (
-          <Text
-            key={v.id}
-            x={0}
-            y={nextY()}
-            text={String(value)}
-            onClick={onClick}
-            fill={style.color}
-            fontSize={style.fontSize}
-          />
-        );
+        const fontSize = style.fontSize || 14;
+        return {
+          node: (
+            <Text
+              key={v.id}
+              x={localX}
+              y={localY}
+              text={String(value)}
+              onClick={onClick}
+              fill={style.color}
+              fontSize={fontSize}
+            />
+          ),
+          width: 0,
+          height: fontSize,
+        };
       }
-      return (
-        <Group key={v.id} onClick={onClick}>
-          {v.children.map((child) => renderView(child))}
-        </Group>
-      );
+
+      let childY = localY;
+      const childrenNodes: React.ReactNode[] = [];
+      let maxWidth = 0;
+      for (const child of v.children) {
+        const res = renderView(child, localX, childY);
+        childY += res.height + (style.marginBottom ?? 0);
+        maxWidth = Math.max(maxWidth, res.width);
+        childrenNodes.push(res.node);
+      }
+      const totalHeight = childY - y;
+
+      return {
+        node: (
+          <Group key={v.id} onClick={onClick}>
+            {childrenNodes}
+          </Group>
+        ),
+        width: maxWidth,
+        height: totalHeight,
+      };
     }
 
     if (v instanceof t.RekaComponentView) {
-      return (
-        <React.Fragment key={v.id}>
-          {v.render.map((r) => renderView(r))}
-        </React.Fragment>
-      );
+      const results = v.render.map((r) => renderView(r, x, y));
+      return {
+        node: (
+          <React.Fragment key={v.id}>
+            {results.map((r) => r.node)}
+          </React.Fragment>
+        ),
+        width: Math.max(...results.map((r) => r.width)),
+        height: results.reduce((sum, r) => sum + r.height, 0),
+      };
     }
 
     if (v instanceof t.ExternalComponentView) {
-      return v.component.render(v.props);
+      return {
+        node: v.component.render(v.props),
+        width: 0,
+        height: 0,
+      };
     }
 
     if (
@@ -137,26 +233,39 @@ export const CanvasRenderer = observer(({ view }: CanvasRendererProps) => {
       v instanceof t.SlotView ||
       v instanceof t.FragmentView
     ) {
-      return (
-        <React.Fragment key={v.id}>
-          {v.children.map((child) => renderView(child))}
-        </React.Fragment>
-      );
-    }
-    if (v instanceof t.ErrorSystemView) {
-      return (
-        <Group key={v.id}>
-          <Text text={`Something went wrong. ${v.error}`} />
-        </Group>
-      );
+      const results = v.children.map((child) => renderView(child, x, y));
+      return {
+        node: (
+          <React.Fragment key={v.id}>
+            {results.map((r) => r.node)}
+          </React.Fragment>
+        ),
+        width: Math.max(...results.map((r) => r.width)),
+        height: results.reduce((sum, r) => sum + r.height, 0),
+      };
     }
 
-    return null;
+    if (v instanceof t.ErrorSystemView) {
+      const fontSize = 14;
+      return {
+        node: (
+          <Group key={v.id}>
+            <Text text={`Something went wrong. ${v.error}`} fontSize={fontSize} />
+          </Group>
+        ),
+        width: 0,
+        height: fontSize,
+      };
+    }
+
+    return { node: null, width: 0, height: 0 };
   };
 
+  const { node } = renderView(view, 0, 0);
+
   return (
-    <Stage width={400} height={300}>
-      <Layer>{renderView(view)}</Layer>
+    <Stage width={STAGE_WIDTH} height={STAGE_HEIGHT}>
+      <Layer>{node}</Layer>
     </Stage>
   );
 });
