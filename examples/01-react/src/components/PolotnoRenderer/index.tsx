@@ -13,7 +13,9 @@ export type PolotnoRendererProps = {
 };
 
 export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
+  const updatingFromRekaRef = React.useRef(false);
   React.useEffect(() => {
+    updatingFromRekaRef.current = true;
     store.clear();
     const page = store.addPage();
 
@@ -65,6 +67,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
     if (frame.view) {
       renderView(frame.view);
     }
+    updatingFromRekaRef.current = false;
   }, [frame.view]);
 
   React.useEffect(() => {
@@ -73,6 +76,9 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
       () =>
         store.activePage?.children.map((el) => ({
           id: el.id,
+          type: (el as any).type,
+          subType: (el as any).subType,
+          text: (el as any).text,
           x: el.x,
           y: el.y,
           width: el.width,
@@ -82,11 +88,48 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
           rekaTplId: (el as any).custom?.rekaTplId,
         })),
       (elements) => {
+        if (updatingFromRekaRef.current) return;
         frame.reka.change(() => {
           elements.forEach((el) => {
-            if (!el.rekaTplId) return;
-            const tpl = frame.reka.getNodeFromId(el.rekaTplId, t.TagTemplate);
+            let tpl =
+              el.rekaTplId &&
+              frame.reka.getNodeFromId(el.rekaTplId, t.TagTemplate);
+            const appComponent = frame.reka.state.program.components.find(
+              (c) => c.name === frame.componentName
+            );
+            const rootTpl = appComponent?.template as t.TagTemplate | undefined;
+
+            if (!tpl) {
+              if (!rootTpl) return;
+              if (el.type === 'text') {
+                tpl = t.tagTemplate({
+                  id: el.rekaTplId,
+                  tag: 'text',
+                  props: {
+                    value: t.literal({ value: el.text ?? '' }),
+                  },
+                  children: [],
+                });
+              } else if (el.type === 'figure' && el.subType === 'rect') {
+                tpl = t.tagTemplate({
+                  id: el.rekaTplId,
+                  tag: 'rect',
+                  props: {},
+                  children: [],
+                });
+              }
+
+              if (tpl) {
+                rootTpl.children.push(tpl);
+                (el as any).custom = {
+                  ...(el as any).custom,
+                  rekaTplId: tpl.id,
+                };
+              }
+            }
+
             if (!tpl) return;
+
             tpl.props = {
               ...tpl.props,
               x: t.literal({ value: el.x }),
@@ -108,6 +151,13 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
                   ? t.literal({ value: el.visible })
                   : tpl.props?.visible,
             };
+
+            if (tpl.tag === 'text') {
+              tpl.props = {
+                ...tpl.props,
+                value: t.literal({ value: el.text ?? '' }),
+              };
+            }
           });
         });
       },
