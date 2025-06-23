@@ -69,6 +69,8 @@ function styleForClassName(className?: string): Partial<StyleInfo> {
   el.style.visibility = 'hidden';
   document.body.appendChild(el);
   const computed = window.getComputedStyle(el);
+  const borderWidth = parseFloat(computed.borderWidth);
+  const fontSize = parseFloat(computed.fontSize);
   const style: Partial<StyleInfo> = {
     fill:
       computed.backgroundColor &&
@@ -79,9 +81,10 @@ function styleForClassName(className?: string): Partial<StyleInfo> {
       computed.borderStyle !== 'none' && computed.borderColor
         ? computed.borderColor
         : undefined,
-    strokeWidth: tailwind.strokeWidth ?? parseFloat(computed.borderWidth) || undefined,
+    strokeWidth:
+      tailwind.strokeWidth ?? (!isNaN(borderWidth) ? borderWidth : undefined),
     color: computed.color || undefined,
-    fontSize: tailwind.fontSize ?? parseFloat(computed.fontSize) || undefined,
+    fontSize: tailwind.fontSize ?? (!isNaN(fontSize) ? fontSize : undefined),
   };
 
   Object.assign(style, tailwind);
