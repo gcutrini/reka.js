@@ -166,5 +166,5 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
     return () => disposer();
   }, [frame]);
 
-  return <Workspace store={store} />;
+  return <Workspace style={{ width: '100%', height: '100%' }} store={store} />;
 });

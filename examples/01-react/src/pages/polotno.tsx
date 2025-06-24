@@ -120,7 +120,7 @@ export default function PolotnoPage() {
         <div className="w-3/6 h-full border-r-2">
           <Editor />
         </div>
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 h-full flex items-center justify-center">
           <PolotnoView />
         </div>
       </div>
