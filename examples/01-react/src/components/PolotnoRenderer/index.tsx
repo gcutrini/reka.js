@@ -15,6 +15,7 @@ export type PolotnoRendererProps = {
 export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
   const updatingFromRekaRef = React.useRef(false);
   const updatingFromPolotnoRef = React.useRef(false);
+  const idMapRef = React.useRef(new Map<string, string>()); // polotnoId -> tplId
 
   const syncFromReka = React.useCallback(() => {
     updatingFromRekaRef.current = true;
@@ -63,6 +64,9 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
                 custom: { rekaTplId: tplId, rekaViewKey: viewKey },
               });
             }
+            if (el) {
+              idMapRef.current.set(el.id, tplId);
+            }
           } else {
             el.set({
               x: props.x ?? el.x,
@@ -86,6 +90,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
                 rekaViewKey: viewKey,
               },
             });
+            idMapRef.current.set(el.id, tplId);
           }
         } else {
           (v as any).children?.forEach(renderView);
@@ -113,6 +118,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
       const viewKey = (el as any).custom?.rekaViewKey;
       if (viewKey && !activeViewKeys.has(viewKey)) {
         store.deleteElements([el.id]);
+        idMapRef.current.delete(el.id);
       }
     });
 
@@ -150,7 +156,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
             height: el.height,
             rotation: el.rotation,
             visible: el.visible,
-            rekaTplId: (el as any).custom?.rekaTplId,
+            rekaTplId: idMapRef.current.get(el.id) || (el as any).custom?.rekaTplId,
           },
         })),
       (elements) => {
@@ -164,12 +170,15 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
           const seen = new Set<string>();
 
           const usedTplIds = new Set<string>();
+          const nextMap = new Map<string, string>();
 
           elements.forEach(({ el, snapshot }) => {
+            const mappedId = idMapRef.current.get(snapshot.id);
+            let tplId = mappedId || snapshot.rekaTplId;
             let tpl =
-              snapshot.rekaTplId &&
-              !usedTplIds.has(snapshot.rekaTplId) &&
-              frame.reka.getNodeFromId(snapshot.rekaTplId, t.TagTemplate);
+              tplId && !usedTplIds.has(tplId)
+                ? frame.reka.getNodeFromId(tplId, t.TagTemplate)
+                : undefined;
 
             if (!tpl && rootTpl) {
               if (snapshot.type === 'text') {
@@ -195,6 +204,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
             if (!tpl) return;
 
             usedTplIds.add(tpl.id);
+            nextMap.set(snapshot.id, tpl.id);
 
             tpl.props = {
               ...tpl.props,
@@ -254,6 +264,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
             Object.keys(rootTpl.slots).forEach((slot) => {
               rootTpl.slots[slot] = rootTpl.slots[slot].filter(prune);
             });
+            idMapRef.current = nextMap;
           }
         });
         updatingFromPolotnoRef.current = false;
