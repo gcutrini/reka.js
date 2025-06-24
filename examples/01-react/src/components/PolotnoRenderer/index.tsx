@@ -22,20 +22,21 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
     const page = store.activePage || store.addPage();
     const existing: Record<string, any> = {};
     page.children.forEach((el) => {
-      const tplId = (el as any).custom?.rekaTplId;
-      if (tplId) {
-        existing[tplId] = el;
+      const viewKey = (el as any).custom?.rekaViewKey;
+      if (viewKey) {
+        existing[viewKey] = el;
       }
     });
 
-    const activeTplIds = new Set<string>();
+    const activeViewKeys = new Set<string>();
 
     const renderView = (v: t.View) => {
       if (v.type === 'TagView') {
         const props = (v as any).props || {};
         const tplId = v.template.id;
-        activeTplIds.add(tplId);
-        let el = existing[tplId];
+        const viewKey = (v as any).key ?? tplId;
+        activeViewKeys.add(viewKey);
+        let el = existing[viewKey];
 
         if (!el) {
           if (v.tag === 'text') {
@@ -46,7 +47,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
               y: props.y ?? 0,
               fill: props.color ?? 'black',
               fontSize: props.fontSize ?? 16,
-              custom: { rekaTplId: tplId },
+              custom: { rekaTplId: tplId, rekaViewKey: viewKey },
             });
           } else if (v.tag === 'rect') {
             el = page.addElement({
@@ -57,7 +58,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
               width: props.width ?? 0,
               height: props.height ?? 0,
               fill: props.color ?? 'black',
-              custom: { rekaTplId: tplId },
+              custom: { rekaTplId: tplId, rekaViewKey: viewKey },
             });
           }
         } else {
@@ -76,10 +77,24 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
               fill: props.color ?? el.fill,
             });
           }
+          el.set({
+            custom: {
+              ...(el as any).custom,
+              rekaTplId: tplId,
+              rekaViewKey: viewKey,
+            },
+          });
         }
-      } else if (v.type === 'RekaComponentView' || v.type === 'ExternalComponentView') {
+      } else if (
+        v.type === 'RekaComponentView' ||
+        v.type === 'ExternalComponentView'
+      ) {
         (v as any).render.forEach(renderView);
-      } else if (v.type === 'FrameView' || v.type === 'SlotView' || v.type === 'FragmentView') {
+      } else if (
+        v.type === 'FrameView' ||
+        v.type === 'SlotView' ||
+        v.type === 'FragmentView'
+      ) {
         (v as any).children.forEach(renderView);
       }
     };
@@ -90,8 +105,8 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
 
     // remove elements that no longer exist
     page.children.slice().forEach((el) => {
-      const tplId = (el as any).custom?.rekaTplId;
-      if (tplId && !activeTplIds.has(tplId)) {
+      const viewKey = (el as any).custom?.rekaViewKey;
+      if (viewKey && !activeViewKeys.has(viewKey)) {
         page.removeElement(el.id);
       }
     });
@@ -156,12 +171,17 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
                   props: { value: t.literal({ value: snapshot.text ?? '' }) },
                   children: [],
                 });
-              } else if (snapshot.type === 'figure' && snapshot.subType === 'rect') {
+              } else if (
+                snapshot.type === 'figure' &&
+                snapshot.subType === 'rect'
+              ) {
                 tpl = t.tagTemplate({ tag: 'rect', props: {}, children: [] });
               }
               if (tpl) {
                 rootTpl.children.push(tpl);
-                el.set({ custom: { ...(el as any).custom, rekaTplId: tpl.id } });
+                el.set({
+                  custom: { ...(el as any).custom, rekaTplId: tpl.id },
+                });
               }
             }
 
@@ -204,12 +224,14 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
           });
 
           if (rootTpl) {
-            rootTpl.children = rootTpl.children.filter((child) => seen.has(child.id));
+            rootTpl.children = rootTpl.children.filter((child) =>
+              seen.has(child.id)
+            );
           }
         });
         updatingFromPolotnoRef.current = false;
       },
-      { fireImmediately: true, equals: comparer.structural }
+      { fireImmediately: false, equals: comparer.structural }
     );
     return () => disposer();
   }, [frame]);
