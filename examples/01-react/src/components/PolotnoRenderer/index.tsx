@@ -35,55 +35,60 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
         const props = (v as any).props || {};
         const tplId = v.template.id;
         const viewKey = (v as any).key ?? tplId;
-        activeViewKeys.add(viewKey);
-        let el = existing[viewKey];
 
-        if (!el) {
-          if (v.tag === 'text') {
-            el = page.addElement({
-              type: 'text',
-              text: String(props.value ?? ''),
-              x: props.x ?? 0,
-              y: props.y ?? 0,
-              fill: props.color ?? 'black',
-              fontSize: props.fontSize ?? 16,
-              custom: { rekaTplId: tplId, rekaViewKey: viewKey },
+        if (v.tag === 'text' || v.tag === 'rect') {
+          activeViewKeys.add(viewKey);
+          let el = existing[viewKey];
+
+          if (!el) {
+            if (v.tag === 'text') {
+              el = page.addElement({
+                type: 'text',
+                text: String(props.value ?? ''),
+                x: props.x ?? 0,
+                y: props.y ?? 0,
+                fill: props.color ?? 'black',
+                fontSize: props.fontSize ?? 16,
+                custom: { rekaTplId: tplId, rekaViewKey: viewKey },
+              });
+            } else if (v.tag === 'rect') {
+              el = page.addElement({
+                type: 'figure',
+                subType: 'rect',
+                x: props.x ?? 0,
+                y: props.y ?? 0,
+                width: props.width ?? 0,
+                height: props.height ?? 0,
+                fill: props.color ?? 'black',
+                custom: { rekaTplId: tplId, rekaViewKey: viewKey },
+              });
+            }
+          } else {
+            el.set({
+              x: props.x ?? el.x,
+              y: props.y ?? el.y,
+              width: props.width ?? el.width,
+              height: props.height ?? el.height,
+              rotation: props.rotation ?? el.rotation,
+              visible: props.visible ?? el.visible,
             });
-          } else if (v.tag === 'rect') {
-            el = page.addElement({
-              type: 'figure',
-              subType: 'rect',
-              x: props.x ?? 0,
-              y: props.y ?? 0,
-              width: props.width ?? 0,
-              height: props.height ?? 0,
-              fill: props.color ?? 'black',
-              custom: { rekaTplId: tplId, rekaViewKey: viewKey },
+            if (v.tag === 'text') {
+              el.set({
+                text: String(props.value ?? ''),
+                fontSize: props.fontSize ?? el.fontSize,
+                fill: props.color ?? el.fill,
+              });
+            }
+            el.set({
+              custom: {
+                ...(el as any).custom,
+                rekaTplId: tplId,
+                rekaViewKey: viewKey,
+              },
             });
           }
         } else {
-          el.set({
-            x: props.x ?? el.x,
-            y: props.y ?? el.y,
-            width: props.width ?? el.width,
-            height: props.height ?? el.height,
-            rotation: props.rotation ?? el.rotation,
-            visible: props.visible ?? el.visible,
-          });
-          if (v.tag === 'text') {
-            el.set({
-              text: String(props.value ?? ''),
-              fontSize: props.fontSize ?? el.fontSize,
-              fill: props.color ?? el.fill,
-            });
-          }
-          el.set({
-            custom: {
-              ...(el as any).custom,
-              rekaTplId: tplId,
-              rekaViewKey: viewKey,
-            },
-          });
+          (v as any).children?.forEach(renderView);
         }
       } else if (
         v.type === 'RekaComponentView' ||
