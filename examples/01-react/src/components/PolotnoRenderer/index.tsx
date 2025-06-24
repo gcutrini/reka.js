@@ -112,7 +112,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
     page.children.slice().forEach((el) => {
       const viewKey = (el as any).custom?.rekaViewKey;
       if (viewKey && !activeViewKeys.has(viewKey)) {
-        page.removeElement(el.id);
+        store.deleteElements([el.id]);
       }
     });
 
