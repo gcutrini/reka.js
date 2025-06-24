@@ -229,9 +229,27 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
           });
 
           if (rootTpl) {
-            rootTpl.children = rootTpl.children.filter((child) =>
-              seen.has(child.id)
-            );
+            const filterTpl = (tpl: t.Template): boolean => {
+              if (
+                t.TagTemplate.is(tpl) &&
+                (tpl.tag === 'text' || tpl.tag === 'rect') &&
+                !seen.has(tpl.id)
+              ) {
+                return false;
+              }
+
+              if (t.SlottableTemplate.is(tpl)) {
+                tpl.children = tpl.children.filter(filterTpl);
+
+                Object.keys(tpl.slots).forEach((slot) => {
+                  tpl.slots[slot] = tpl.slots[slot].filter(filterTpl);
+                });
+              }
+
+              return true;
+            };
+
+            filterTpl(rootTpl);
           }
         });
         updatingFromPolotnoRef.current = false;
