@@ -82,6 +82,10 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
                 fontSize: props.fontSize ?? el.fontSize,
                 fill: props.color ?? el.fill,
               });
+            } else if (v.tag === 'rect') {
+              el.set({
+                fill: props.color ?? el.fill,
+              });
             }
             el.set({
               custom: {
@@ -158,6 +162,8 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
             height: el.height,
             rotation: el.rotation,
             visible: el.visible,
+            fill: (el as any).fill,
+            fontSize: (el as any).fontSize,
             rekaTplId: idMapRef.current.get(el.id) || (el as any).custom?.rekaTplId,
           },
         })),
@@ -186,14 +192,27 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
               if (snapshot.type === 'text') {
                 tpl = t.tagTemplate({
                   tag: 'text',
-                  props: { value: t.literal({ value: snapshot.text ?? '' }) },
+                  props: {
+                    value: t.literal({ value: snapshot.text ?? '' }),
+                    color: t.literal({ value: snapshot.fill ?? 'black' }),
+                    fontSize:
+                      snapshot.fontSize !== undefined
+                        ? t.literal({ value: snapshot.fontSize })
+                        : undefined,
+                  },
                   children: [],
                 });
               } else if (
                 snapshot.type === 'figure' &&
                 snapshot.subType === 'rect'
               ) {
-                tpl = t.tagTemplate({ tag: 'rect', props: {}, children: [] });
+                tpl = t.tagTemplate({
+                  tag: 'rect',
+                  props: {
+                    color: t.literal({ value: snapshot.fill ?? 'black' }),
+                  },
+                  children: [],
+                });
               }
               if (tpl) {
                 rootTpl.children.push(tpl);
@@ -228,7 +247,11 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
                 snapshot.visible !== undefined
                   ? t.literal({ value: snapshot.visible })
                   : tpl.props?.visible,
-            };
+              color:
+                snapshot.fill !== undefined
+                  ? t.literal({ value: snapshot.fill })
+                  : tpl.props?.color,
+            } as any;
             if (tpl.tag === 'text') {
               tpl.props = {
                 ...tpl.props,
