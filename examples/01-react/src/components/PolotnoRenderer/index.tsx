@@ -116,17 +116,20 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
     const disposer = reaction(
       () =>
         store.activePage?.children.map((el) => ({
-          id: el.id,
-          type: (el as any).type,
-          subType: (el as any).subType,
-          text: (el as any).text,
-          x: el.x,
-          y: el.y,
-          width: el.width,
-          height: el.height,
-          rotation: el.rotation,
-          visible: el.visible,
-          rekaTplId: (el as any).custom?.rekaTplId,
+          el,
+          snapshot: {
+            id: el.id,
+            type: (el as any).type,
+            subType: (el as any).subType,
+            text: (el as any).text,
+            x: el.x,
+            y: el.y,
+            width: el.width,
+            height: el.height,
+            rotation: el.rotation,
+            visible: el.visible,
+            rekaTplId: (el as any).custom?.rekaTplId,
+          },
         })),
       (elements) => {
         if (updatingFromRekaRef.current) return;
@@ -138,49 +141,63 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
           const rootTpl = appComponent?.template as t.TagTemplate | undefined;
           const seen = new Set<string>();
 
-          elements.forEach((el) => {
+          const usedTplIds = new Set<string>();
+
+          elements.forEach(({ el, snapshot }) => {
             let tpl =
-              el.rekaTplId && frame.reka.getNodeFromId(el.rekaTplId, t.TagTemplate);
+              snapshot.rekaTplId &&
+              !usedTplIds.has(snapshot.rekaTplId) &&
+              frame.reka.getNodeFromId(snapshot.rekaTplId, t.TagTemplate);
 
             if (!tpl && rootTpl) {
-              if (el.type === 'text') {
+              if (snapshot.type === 'text') {
                 tpl = t.tagTemplate({
                   tag: 'text',
-                  props: { value: t.literal({ value: el.text ?? '' }) },
+                  props: { value: t.literal({ value: snapshot.text ?? '' }) },
                   children: [],
                 });
-              } else if (el.type === 'figure' && el.subType === 'rect') {
+              } else if (snapshot.type === 'figure' && snapshot.subType === 'rect') {
                 tpl = t.tagTemplate({ tag: 'rect', props: {}, children: [] });
               }
               if (tpl) {
                 rootTpl.children.push(tpl);
-                (el as any).custom = { ...(el as any).custom, rekaTplId: tpl.id };
+                el.set({ custom: { ...(el as any).custom, rekaTplId: tpl.id } });
               }
             }
 
             if (!tpl) return;
 
+            usedTplIds.add(tpl.id);
+
             tpl.props = {
               ...tpl.props,
-              x: t.literal({ value: el.x }),
-              y: t.literal({ value: el.y }),
-              width: el.width !== undefined ? t.literal({ value: el.width }) : tpl.props?.width,
-              height: el.height !== undefined ? t.literal({ value: el.height }) : tpl.props?.height,
+              x: t.literal({ value: snapshot.x }),
+              y: t.literal({ value: snapshot.y }),
+              width:
+                snapshot.width !== undefined
+                  ? t.literal({ value: snapshot.width })
+                  : tpl.props?.width,
+              height:
+                snapshot.height !== undefined
+                  ? t.literal({ value: snapshot.height })
+                  : tpl.props?.height,
               rotation:
-                el.rotation !== undefined
-                  ? t.literal({ value: el.rotation })
+                snapshot.rotation !== undefined
+                  ? t.literal({ value: snapshot.rotation })
                   : tpl.props?.rotation,
               visible:
-                el.visible !== undefined
-                  ? t.literal({ value: el.visible })
+                snapshot.visible !== undefined
+                  ? t.literal({ value: snapshot.visible })
                   : tpl.props?.visible,
             };
             if (tpl.tag === 'text') {
               tpl.props = {
                 ...tpl.props,
-                value: t.literal({ value: el.text ?? '' }),
+                value: t.literal({ value: snapshot.text ?? '' }),
                 fontSize:
-                  el.fontSize !== undefined ? t.literal({ value: el.fontSize }) : tpl.props?.fontSize,
+                  (snapshot as any).fontSize !== undefined
+                    ? t.literal({ value: (snapshot as any).fontSize })
+                    : tpl.props?.fontSize,
               } as any;
             }
             seen.add(tpl.id);
