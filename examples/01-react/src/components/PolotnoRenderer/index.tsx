@@ -129,9 +129,11 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
     syncFromReka();
 
     const unsubscribe = frame.listenToChangeset(() => {
-      if (updatingFromPolotnoRef.current) return;
+      const fromPolotno = updatingFromPolotnoRef.current;
       frame.compute(true, () => {
-        syncFromReka();
+        if (!fromPolotno) {
+          syncFromReka();
+        }
       });
     });
 
