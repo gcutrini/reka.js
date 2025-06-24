@@ -15,57 +15,46 @@ export type PolotnoRendererProps = {
 export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
   const updatingFromRekaRef = React.useRef(false);
   const updatingFromPolotnoRef = React.useRef(false);
-  const idMapRef = React.useRef(new Map<string, string>()); // polotnoId -> tplId
 
   const syncFromReka = React.useCallback(() => {
     updatingFromRekaRef.current = true;
 
     const page = store.activePage || store.addPage();
-    const existing: Record<string, any> = {};
-    page.children.forEach((el) => {
-      const viewKey = (el as any).custom?.rekaViewKey;
-      if (viewKey) {
-        existing[viewKey] = el;
-      }
-    });
-
-    const activeViewKeys = new Set<string>();
+    const activeIds = new Set<string>();
 
     const renderView = (v: t.View) => {
       if (v.type === 'TagView') {
         const props = (v as any).props || {};
         const tplId = v.template.id;
-        const viewKey = (v as any).key ?? tplId;
 
         if (v.tag === 'text' || v.tag === 'rect') {
-          activeViewKeys.add(viewKey);
-          let el = existing[viewKey];
+          activeIds.add(tplId);
+          let el = page.children.find((c) => c.id === tplId);
 
           if (!el) {
             if (v.tag === 'text') {
               el = page.addElement({
                 type: 'text',
+                id: tplId,
                 text: String(props.value ?? ''),
                 x: props.x ?? 0,
                 y: props.y ?? 0,
                 fill: props.color ?? 'black',
                 fontSize: props.fontSize ?? 16,
-                custom: { rekaTplId: tplId, rekaViewKey: viewKey },
+                custom: { rekaTplId: tplId },
               });
             } else if (v.tag === 'rect') {
               el = page.addElement({
                 type: 'figure',
                 subType: 'rect',
+                id: tplId,
                 x: props.x ?? 0,
                 y: props.y ?? 0,
                 width: props.width ?? 0,
                 height: props.height ?? 0,
                 fill: props.color ?? 'black',
-                custom: { rekaTplId: tplId, rekaViewKey: viewKey },
+                custom: { rekaTplId: tplId },
               });
-            }
-            if (el) {
-              idMapRef.current.set(el.id, tplId);
             }
           } else {
             el.set({
@@ -87,14 +76,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
                 fill: props.color ?? el.fill,
               });
             }
-            el.set({
-              custom: {
-                ...(el as any).custom,
-                rekaTplId: tplId,
-                rekaViewKey: viewKey,
-              },
-            });
-            idMapRef.current.set(el.id, tplId);
+            el.set({ custom: { ...(el as any).custom, rekaTplId: tplId } });
           }
         } else {
           (v as any).children?.forEach(renderView);
@@ -119,10 +101,9 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
 
     // remove elements that no longer exist
     page.children.slice().forEach((el) => {
-      const viewKey = (el as any).custom?.rekaViewKey;
-      if (viewKey && !activeViewKeys.has(viewKey)) {
+      const tplId = (el as any).custom?.rekaTplId;
+      if (tplId && !activeIds.has(tplId)) {
         store.deleteElements([el.id]);
-        idMapRef.current.delete(el.id);
       }
     });
 
@@ -164,7 +145,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
             visible: el.visible,
             fill: (el as any).fill,
             fontSize: (el as any).fontSize,
-            rekaTplId: idMapRef.current.get(el.id) || (el as any).custom?.rekaTplId,
+            rekaTplId: (el as any).custom?.rekaTplId,
           },
         })),
       (elements) => {
@@ -177,16 +158,9 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
           const rootTpl = appComponent?.template as t.TagTemplate | undefined;
           const seen = new Set<string>();
 
-          const usedTplIds = new Set<string>();
-          const nextMap = new Map<string, string>();
-
           elements.forEach(({ el, snapshot }) => {
-            const mappedId = idMapRef.current.get(snapshot.id);
-            let tplId = mappedId || snapshot.rekaTplId;
-            let tpl =
-              tplId && !usedTplIds.has(tplId)
-                ? frame.reka.getNodeFromId(tplId, t.TagTemplate)
-                : undefined;
+            const tplId = snapshot.id;
+            let tpl = frame.reka.getNodeFromId(tplId, t.TagTemplate);
 
             if (!tpl && rootTpl) {
               if (snapshot.type === 'text') {
@@ -223,9 +197,6 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
             }
 
             if (!tpl) return;
-
-            usedTplIds.add(tpl.id);
-            nextMap.set(snapshot.id, tpl.id);
 
             tpl.props = {
               ...tpl.props,
@@ -289,7 +260,6 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
             Object.keys(rootTpl.slots).forEach((slot) => {
               rootTpl.slots[slot] = rootTpl.slots[slot].filter(prune);
             });
-            idMapRef.current = nextMap;
           }
         });
         updatingFromPolotnoRef.current = false;
