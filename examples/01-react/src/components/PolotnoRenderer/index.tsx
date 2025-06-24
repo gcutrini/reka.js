@@ -229,27 +229,29 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
           });
 
           if (rootTpl) {
-            const filterTpl = (tpl: t.Template): boolean => {
+            const prune = (tpl: t.Template): boolean => {
               if (
                 t.TagTemplate.is(tpl) &&
-                (tpl.tag === 'text' || tpl.tag === 'rect') &&
-                !seen.has(tpl.id)
+                (tpl.tag === 'text' || tpl.tag === 'rect')
               ) {
-                return false;
+                return seen.has(tpl.id);
               }
 
               if (t.SlottableTemplate.is(tpl)) {
-                tpl.children = tpl.children.filter(filterTpl);
+                tpl.children = tpl.children.filter(prune);
 
                 Object.keys(tpl.slots).forEach((slot) => {
-                  tpl.slots[slot] = tpl.slots[slot].filter(filterTpl);
+                  tpl.slots[slot] = tpl.slots[slot].filter(prune);
                 });
               }
 
               return true;
             };
 
-            filterTpl(rootTpl);
+            rootTpl.children = rootTpl.children.filter(prune);
+            Object.keys(rootTpl.slots).forEach((slot) => {
+              rootTpl.slots[slot] = rootTpl.slots[slot].filter(prune);
+            });
           }
         });
         updatingFromPolotnoRef.current = false;
