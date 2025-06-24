@@ -14,7 +14,8 @@ export type PolotnoRendererProps = {
 
 export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
   const updatingFromRekaRef = React.useRef(false);
-  React.useEffect(() => {
+  const updatingFromPolotnoRef = React.useRef(false);
+  const renderFrame = React.useCallback(() => {
     updatingFromRekaRef.current = true;
     store.clear();
     const page = store.addPage();
@@ -68,7 +69,20 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
       renderView(frame.view);
     }
     updatingFromRekaRef.current = false;
-  }, [frame.view]);
+  }, [frame]);
+
+  React.useEffect(() => {
+    renderFrame();
+
+    const unsubscribe = frame.listenToChangeset(() => {
+      if (updatingFromPolotnoRef.current) return;
+      renderFrame();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [frame, renderFrame]);
 
   React.useEffect(() => {
     if (!frame) return;
@@ -89,6 +103,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
         })),
       (elements) => {
         if (updatingFromRekaRef.current) return;
+        updatingFromPolotnoRef.current = true;
         frame.reka.change(() => {
           elements.forEach((el) => {
             let tpl =
@@ -160,6 +175,7 @@ export const PolotnoRenderer = observer(({ frame }: PolotnoRendererProps) => {
             }
           });
         });
+        updatingFromPolotnoRef.current = false;
       },
       { equals: comparer.structural }
     );
