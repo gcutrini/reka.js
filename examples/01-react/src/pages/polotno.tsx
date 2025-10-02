@@ -110,7 +110,7 @@ const frame = reka.createFrame({
 frame.compute(true);
 
 const PolotnoView = observer(() => {
-  return frame.view ? <PolotnoRenderer view={frame.view} /> : null;
+  return <PolotnoRenderer frame={frame} />;
 });
 
 export default function PolotnoPage() {
@@ -120,7 +120,7 @@ export default function PolotnoPage() {
         <div className="w-3/6 h-full border-r-2">
           <Editor />
         </div>
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 h-full flex items-center justify-center">
           <PolotnoView />
         </div>
       </div>
